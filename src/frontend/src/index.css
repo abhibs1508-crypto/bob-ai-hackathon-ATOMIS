@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS custom properties for the console palette ── */
+:root {
+  --console-950: #0a0c0f;
+  --console-900: #0e1117;
+  --console-850: #12161d;
+  --console-800: #161b24;
+  --console-750: #1b2130;
+  --console-700: #1f273a;
+  --border:       #1e2a3b;
+  --border-subtle:#1a2334;
+  --intel-500:    #38bdf8;
+  --intel-600:    #0ea5e9;
+}
+
+/* ── Base ── */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--console-950);
+  color: #e2e8f0;
+  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--console-900);
+}
+::-webkit-scrollbar-thumb {
+  background: #263045;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2e3a52;
+}
+
+/* ── Utility classes ── */
+@layer components {
+  .panel {
+    @apply bg-[#12161d] border border-[#1e2a3b] rounded-lg;
+  }
+
+  .panel-header {
+    @apply px-4 py-3 border-b border-[#1e2a3b] flex items-center justify-between;
+  }
+
+  .tag {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide;
+  }
+
+  .tag-critical {
+    @apply tag bg-red-900/40 text-red-400 border border-red-800/50;
+  }
+
+  .tag-high {
+    @apply tag bg-orange-900/40 text-orange-400 border border-orange-800/50;
+  }
+
+  .tag-medium {
+    @apply tag bg-yellow-900/40 text-yellow-400 border border-yellow-800/50;
+  }
+
+  .tag-low {
+    @apply tag bg-slate-800/60 text-slate-400 border border-slate-700/50;
+  }
+
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+
+  .btn-primary {
+    @apply px-3 py-1.5 rounded text-xs font-medium bg-sky-600 hover:bg-sky-500 text-white transition-colors;
+  }
+
+  .btn-ghost {
+    @apply px-3 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors;
+  }
+
+  .skeleton {
+    @apply bg-[#1b2130] rounded animate-pulse;
+  }
+}
+
+/* ── Threat priority row glows ── */
+.row-critical {
+  border-left: 2px solid #ef4444;
+}
+.row-high {
+  border-left: 2px solid #f97316;
+}
+.row-medium {
+  border-left: 2px solid #eab308;
+}
+.row-low {
+  border-left: 2px solid #374151;
+}
