@@ -1,69 +1,103 @@
+```yaml
 # =============================================================================
 # HACKATHON SUBMISSION METADATA
 # =============================================================================
-# Instructions:
-#   - Fill in ALL required fields (marked with # REQUIRED)
-#   - Optional fields can be left as empty strings ""
-#   - Do NOT rename this file — the evaluation pipeline reads it by name
-#   - Use double quotes around all string values
-# =============================================================================
 
 team:
-  name: ""                             # REQUIRED — e.g., "Orion Squad"
-  track: ""                            # REQUIRED — one of: AI | DevOps | Sustainability | Open
+  name: "CyberFusion"
+  track: "AI"
   lead:
-    name: ""                           # REQUIRED — e.g., "Alice Chen"
-    email: ""                          # REQUIRED — e.g., "alice.chen@ibm.com"
+    name: "Solanki Abhishek"
+    email: "26msit145@charusat.edu.in"
   members:
-    - name: ""                         # REQUIRED — Team member 1
-      email: ""
-    - name: ""                         # Add more members by copying the two lines above
-      email: ""
-    - name: ""
-      email: ""
+    - name: "Solanki Abhishek"
+      email: "26msit145@charusat.edu.in"
+    - name: "Uday Solanki"
+      email: "26msit146@charusat.edu.in"
+    - name: "Nilesh Vyas"
+      email: "26msit165@charusat.edu.in"
+    - name: "Vrutika Rajput"
+      email: "26msit126@charusat.edu.in"
 
 submission:
-  title: ""                            # REQUIRED — Project display name, e.g., "SmartOps Dashboard"
+  title: "Threat Intelligence Correlation & Alert Prioritisation Assistant"
 
-  problem_statement: >                 # REQUIRED — 1-3 sentences. What problem? Who has it?
-    Replace this text with a concise description of the real-world problem
-    your project addresses and who experiences it.
+  problem_statement: >
+    Defence and security analysts receive large volumes of alerts from SIEM
+    systems, cyber sensors, threat-intelligence sources, and intelligence
+    reports in different formats. Correlating these signals manually is
+    time-consuming and can cause genuine threats to be missed while analysts
+    spend valuable time investigating false positives.
 
-  solution_summary: >                  # REQUIRED — 1-3 sentences. What did you build?
-    Replace this text with a clear description of your solution
-    and how it addresses the problem above.
+  solution_summary: >
+    CyberFusion is an AI-assisted threat intelligence platform that ingests,
+    normalizes, correlates, and prioritizes security events from multiple
+    sources. Its deterministic correlation and risk engines identify related
+    threats and calculate authoritative priorities, while an AI intelligence
+    layer generates evidence-based BLUF assessments, possible intent,
+    reasoning, and recommended actions for human analysts.
 
-  key_features:                        # REQUIRED — List 3 to 5 specific features you implemented
-    - ""                               # e.g., "Real-time pipeline anomaly detection using watsonx.ai"
-    - ""
-    - ""
-    - ""                               # optional 4th
-    - ""                               # optional 5th
+  key_features:
+    - "Multi-source security event ingestion and normalization"
+    - "Evidence-based correlation of related security events"
+    - "Risk scoring and automatic alert prioritisation"
+    - "AI-generated BLUF threat intelligence reports with guardrails"
+    - "Analyst dashboard for reviewing threats, correlations, risks, and intelligence"
 
   tech_stack:
-    languages: []                      # REQUIRED — e.g., ["Python", "TypeScript"]
-    frameworks: []                     # e.g., ["FastAPI", "React"]
-    ibm_technologies: []               # e.g., ["watsonx.ai", "IBM Bob", "IBM Cloud Functions"]
-    databases: []                      # e.g., ["PostgreSQL", "Redis"]
-    other: []                          # e.g., ["Docker", "GitHub Actions", "Slack API"]
+    languages:
+      - "JavaScript"
+      - "SQL"
+    frameworks:
+      - "React"
+      - "Vite"
+      - "Express.js"
+      - "Tailwind CSS"
+    ibm_technologies:
+      - "IBM BoB AI Innovation Hackathon"
+    databases:
+      - "Supabase PostgreSQL"
+    other:
+      - "Node.js"
+      - "Groq AI"
+      - "Axios"
+      - "React Router"
+      - "React Flow"
+      - "Recharts"
+      - "Jest"
+      - "Supertest"
+      - "Vitest"
+      - "Netlify"
 
-  what_we_are_most_proud_of: >         # Optional but recommended — guides judges to your best work
-    Replace with what aspect of the submission you consider strongest
-    and want judges to pay special attention to.
+  what_we_are_most_proud_of: >
+    We are most proud of the complete evidence-to-intelligence pipeline that
+    connects multi-source security events to explainable correlation,
+    authoritative risk prioritisation, and guarded AI-generated intelligence.
+    In our verified demonstration scenario, four related events from three
+    source types produced a correlation score of 77 (VERY_STRONG), a risk score
+    of 81 (CRITICAL), and an AI-generated intelligence assessment with 92
+    confidence. The AI layer cannot override the authoritative risk decision
+    and all generated intelligence passes application-level guardrails.
 
-  known_limitations: >                 # Optional but recommended — be honest about gaps
-    Replace with any known limitations, incomplete features,
-    or shortcuts taken due to time constraints.
+  known_limitations: >
+    The current hackathon prototype uses simulated structured security events
+    representing SIEM, cyber sensor, threat-intelligence, and intelligence
+    report sources rather than connecting to live enterprise feeds. Production
+    deployments could connect the same ingestion interfaces to real SIEM,
+    sensor, and threat-intelligence systems. The application also uses a
+    human-in-the-loop model, so AI-generated recommendations are advisory and
+    require analyst review before operational action.
 
 # =============================================================================
 # ARTIFACT LOCATIONS
-# These paths are relative to the repo root. Only change if you moved files.
 # =============================================================================
+
 artifacts:
   source_code: "src/"
   setup_guide: "docs/setup-guide.md"
   architecture_doc: "docs/architecture.md"
-  demo_video: "demo/demo-video-link.txt"   # URL to hosted video (YouTube, Loom, Box)
-  live_demo: "demo/live-demo-url.txt"      # URL to deployed demo (optional)
+  demo_video: "demo/demo-video-link.txt"
+  live_demo: "demo/live-demo-url.txt"
   screenshots: "demo/screenshots/"
   presentation: "presentation/"
+```
