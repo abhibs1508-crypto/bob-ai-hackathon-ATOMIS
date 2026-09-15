@@ -96,8 +96,8 @@ artifacts:
   source_code: "src/"
   setup_guide: "docs/setup-guide.md"
   architecture_doc: "docs/architecture.md"
-  demo_video: "demo/demo-video-link.txt"
-  live_demo: "demo/live-demo-url.txt"
-  screenshots: "demo/screenshots/"
-  presentation: "presentation/"
+  demo_video: "demo/https://www.youtube.com/"
+  live_demo: "https://rainbow-faun-0fed3e.netlify.app"
+  screenshots: "demo/screenshots/Screenshot 2026-09-15 225301.png"
+  presentation: "presentation/FROM-NOISE-TO-SIGNAL.pdf"
 
