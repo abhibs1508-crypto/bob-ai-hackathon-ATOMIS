@@ -1,67 +1,57 @@
 'use strict';
 
 /**
- * CyberFusion — MySQL Connection Pool
+ * CyberFusion — Supabase Connection Pool
  *
- * Creates a single mysql2 promise-based connection pool for the entire
- * application lifetime. Import { pool } from this module everywhere.
- *
- * Designed so that switching from local XAMPP to Aiven (or any other MySQL
- * host) requires only environment variable changes — no code changes.
+ * Replaces the MySQL pool with a Supabase client singleton.
+ * Uses the Service Role Key for backend administration.
  */
 
-const mysql = require('mysql2/promise');
+const { createClient } = require('@supabase/supabase-js');
 const config = require('../config');
 
-/** @type {import('mysql2/promise').Pool} */
-let pool;
+/** @type {import('@supabase/supabase-js').SupabaseClient} */
+let supabaseClient;
 
 /**
- * Creates (or returns the existing) connection pool.
- * @returns {import('mysql2/promise').Pool}
+ * Creates (or returns the existing) Supabase client.
+ * @returns {import('@supabase/supabase-js').SupabaseClient}
  */
 function getPool() {
-  if (pool) return pool;
+  if (supabaseClient) return supabaseClient;
 
-  const poolConfig = {
-    host:               config.db.host,
-    port:               config.db.port,
-    user:               config.db.user,
-    password:           config.db.password,
-    database:           config.db.name,
-    connectionLimit:    config.db.connectionLimit,
-    waitForConnections: true,
-    queueLimit:         0,
-    // Keeps connections alive and avoids stale-connection errors on Aiven
-    enableKeepAlive:    true,
-    keepAliveInitialDelay: 10000,
-    // Return dates as strings so timezone handling is explicit
-    dateStrings: true,
-  };
-
-  // Aiven (and other hosted MySQL) require SSL — enabled via DB_SSL=true
-  if (config.db.ssl) {
-    poolConfig.ssl = { rejectUnauthorized: true };
+  if (!config.supabase.url || !config.supabase.serviceKey) {
+    throw new Error('[db] Missing Supabase URL or Key in configuration.');
   }
 
-  pool = mysql.createPool(poolConfig);
-  return pool;
+  supabaseClient = createClient(config.supabase.url, config.supabase.serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    }
+  });
+
+  return supabaseClient;
 }
 
 /**
  * Verifies the database is reachable by executing a lightweight query.
- * Logs the result without printing credentials.
  * @returns {Promise<void>}
  */
 async function checkDatabaseConnection() {
-  const conn = await getPool().getConnection();
+  const client = getPool();
   try {
-    await conn.query('SELECT 1');
-    console.log('[db] Database connection: SUCCESS');
-    console.log(`[db] Connected to ${config.db.host}:${config.db.port}/${config.db.name}`);
-  } finally {
-    conn.release();
+    const { data, error } = await client.from('entities').select('id').limit(1);
+    if (error) throw error;
+    console.log('[db] Supabase connection: SUCCESS');
+    console.log(`[db] Connected to Supabase project: ${config.supabase.url}`);
+  } catch (err) {
+    console.error('[db] Supabase connection failed:', err.message);
+    throw err;
   }
 }
 
+// Ensure compatibility with old getPool() usage in repositories:
+// Previously: getPool().execute(sql, params)
+// Now, repositories will use: getPool().from('table').select(...)
 module.exports = { getPool, checkDatabaseConnection };

@@ -18,3 +18,7 @@ export async function getHealth() {
   const { data } = await client.get('/health');
   return data;
 }
+
+// Alias used by Dashboard
+export const getHealthStatus = getHealth;
+

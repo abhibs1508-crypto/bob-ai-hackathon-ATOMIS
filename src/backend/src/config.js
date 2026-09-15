@@ -35,17 +35,10 @@ const config = Object.freeze({
   /** HTTP server port */
   port: parseInt(env('BACKEND_PORT', '4000'), 10),
 
-  /** MySQL connection settings */
-  db: Object.freeze({
-    host:     env('DB_HOST', 'localhost'),
-    port:     parseInt(env('DB_PORT', '3306'), 10),
-    user:     env('DB_USER', 'root'),
-    // password intentionally has no default — empty string is valid for XAMPP
-    password: env('DB_PASSWORD', ''),
-    name:     env('DB_NAME', 'cyberfusion_db'),
-    // SSL support: set DB_SSL=true for Aiven; not required for local XAMPP
-    ssl:      env('DB_SSL', 'false') === 'true',
-    connectionLimit: parseInt(env('DB_POOL_LIMIT', '10'), 10),
+  /** Supabase connection settings */
+  supabase: Object.freeze({
+    url: env('SUPABASE_URL', '', true),
+    serviceKey: env('SUPABASE_SERVICE_ROLE_KEY', env('SUPABASE_ANON_KEY', ''), true),
   }),
 
   /** AI provider (Phase 4) — read here so config is the single source */

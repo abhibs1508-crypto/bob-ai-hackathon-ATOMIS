@@ -40,6 +40,8 @@ function fallbackAssessment(context) {
       'Escalate according to the organization\'s incident response procedure.',
     ],
     confidence_score: 60,
+    categorization: 'Medium',
+    is_false_positive: false,
   };
 }
 
@@ -55,6 +57,8 @@ function toPersistable(correlationId, assessment, provider, model) {
     aiProvider: provider,
     aiModel: model || null,
     confidenceScore: assessment.confidence_score,
+    categorization: assessment.categorization,
+    isFalsePositive: assessment.is_false_positive,
   };
 }
 

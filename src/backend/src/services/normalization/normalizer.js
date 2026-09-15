@@ -25,6 +25,19 @@ const { v4: uuidv4 } = require('uuid');
 // ---------------------------------------------------------------------------
 
 const VALID_SOURCES = ['SIEM', 'SENSOR', 'THREAT_INTEL', 'INTELLIGENCE_REPORT'];
+
+// Aliases: allow lowercase / shorthand source names from seed data
+const SOURCE_ALIAS_MAP = {
+  siem:                 'SIEM',
+  sensor:               'SENSOR',
+  ti_feed:              'THREAT_INTEL',
+  threat_intel:         'THREAT_INTEL',
+  'threat-intel':       'THREAT_INTEL',
+  intelligence_report:  'INTELLIGENCE_REPORT',
+  intelligence:         'INTELLIGENCE_REPORT',
+  report:               'INTELLIGENCE_REPORT',
+};
+
 const VALID_SEVERITIES = ['low', 'medium', 'high', 'critical'];
 const SEVERITY_NORMALISATION_MAP = {
   LOW: 'low', MEDIUM: 'medium', HIGH: 'high', CRITICAL: 'critical',
@@ -240,18 +253,20 @@ function normaliseIntelligenceReport(payload, eventId) {
  * @throws {Error} if the source type is unrecognised
  */
 function normalise(payload) {
-  const source = normaliseSourceLabel(payload.source);
+  // Resolve alias (e.g. 'ti_feed' → 'THREAT_INTEL', 'siem' → 'SIEM')
+  const rawSource = (payload.source || '').toString().toLowerCase().replace(/-/g, '_');
+  const source = SOURCE_ALIAS_MAP[rawSource] || (payload.source || '').toString().toUpperCase();
   const eventId = payload.event_id || `EVT-${uuidv4()}`;
 
   switch (source) {
     case 'SIEM':
-      return normaliseSiem(payload, eventId);
+      return normaliseSiem({ ...payload, source }, eventId);
     case 'SENSOR':
-      return normaliseSensor(payload, eventId);
+      return normaliseSensor({ ...payload, source }, eventId);
     case 'THREAT_INTEL':
-      return normaliseThreatIntel(payload, eventId);
+      return normaliseThreatIntel({ ...payload, source }, eventId);
     case 'INTELLIGENCE_REPORT':
-      return normaliseIntelligenceReport(payload, eventId);
+      return normaliseIntelligenceReport({ ...payload, source }, eventId);
     default:
       throw new Error(`Unsupported source type: "${payload.source}". Valid values: ${VALID_SOURCES.join(', ')}`);
   }

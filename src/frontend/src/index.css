@@ -2,110 +2,139 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS custom properties for the console palette ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Design Tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --console-950: #0a0c0f;
-  --console-900: #0e1117;
-  --console-850: #12161d;
-  --console-800: #161b24;
-  --console-750: #1b2130;
-  --console-700: #1f273a;
-  --border:       #1e2a3b;
-  --border-subtle:#1a2334;
-  --intel-500:    #38bdf8;
-  --intel-600:    #0ea5e9;
+  --bg-primary:    #080d14;
+  --bg-secondary:  #0d1520;
+  --bg-panel:      #0f1a28;
+  --bg-card:       #111d2e;
+  --bg-hover:      #162236;
+  --border:        #1a2d44;
+  --border-light:  #1f3550;
+
+  --text-primary:  #e2eaf5;
+  --text-secondary:#8da4c0;
+  --text-muted:    #4a6380;
+  --text-dim:      #2d4a65;
+
+  --critical:      #ff3b5c;
+  --critical-bg:   rgba(255,59,92,.12);
+  --critical-border:rgba(255,59,92,.25);
+
+  --high:          #ff8c00;
+  --high-bg:       rgba(255,140,0,.12);
+  --high-border:   rgba(255,140,0,.25);
+
+  --medium:        #f5c518;
+  --medium-bg:     rgba(245,197,24,.10);
+  --medium-border: rgba(245,197,24,.22);
+
+  --low:           #22c55e;
+  --low-bg:        rgba(34,197,94,.10);
+  --low-border:    rgba(34,197,94,.20);
+
+  --accent:        #3b82f6;
+  --accent-glow:   rgba(59,130,246,.20);
+
+  --radius-sm:     6px;
+  --radius-md:     10px;
+  --radius-lg:     14px;
 }
 
-/* ── Base ── */
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 html, body, #root {
   height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  background-color: var(--console-950);
-  color: #e2e8f0;
-  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--console-900);
-}
-::-webkit-scrollbar-thumb {
-  background: #263045;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #2e3a52;
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Utility Classes ───────────────────────────────────────────────────────── */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
-/* ── Utility classes ── */
-@layer components {
-  .panel {
-    @apply bg-[#12161d] border border-[#1e2a3b] rounded-lg;
-  }
-
-  .panel-header {
-    @apply px-4 py-3 border-b border-[#1e2a3b] flex items-center justify-between;
-  }
-
-  .tag {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide;
-  }
-
-  .tag-critical {
-    @apply tag bg-red-900/40 text-red-400 border border-red-800/50;
-  }
-
-  .tag-high {
-    @apply tag bg-orange-900/40 text-orange-400 border border-orange-800/50;
-  }
-
-  .tag-medium {
-    @apply tag bg-yellow-900/40 text-yellow-400 border border-yellow-800/50;
-  }
-
-  .tag-low {
-    @apply tag bg-slate-800/60 text-slate-400 border border-slate-700/50;
-  }
-
-  .status-dot {
-    @apply inline-block w-2 h-2 rounded-full;
-  }
-
-  .btn-primary {
-    @apply px-3 py-1.5 rounded text-xs font-medium bg-sky-600 hover:bg-sky-500 text-white transition-colors;
-  }
-
-  .btn-ghost {
-    @apply px-3 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors;
-  }
-
-  .skeleton {
-    @apply bg-[#1b2130] rounded animate-pulse;
-  }
+.panel-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
-/* ── Threat priority row glows ── */
-.row-critical {
-  border-left: 2px solid #ef4444;
+.glass {
+  background: rgba(15, 26, 40, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
 }
-.row-high {
-  border-left: 2px solid #f97316;
+
+/* Priority badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
 }
-.row-medium {
-  border-left: 2px solid #eab308;
+
+.badge-critical { background: var(--critical-bg); color: var(--critical); border-color: var(--critical-border); }
+.badge-high     { background: var(--high-bg);     color: var(--high);     border-color: var(--high-border); }
+.badge-medium   { background: var(--medium-bg);   color: var(--medium);   border-color: var(--medium-border); }
+.badge-low      { background: var(--low-bg);       color: var(--low);     border-color: var(--low-border); }
+
+/* Priority dots */
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-critical { background: var(--critical); box-shadow: 0 0 6px var(--critical); }
+.dot-high     { background: var(--high);     box-shadow: 0 0 6px var(--high); }
+.dot-medium   { background: var(--medium);   box-shadow: 0 0 6px var(--medium); }
+.dot-low      { background: var(--low);       box-shadow: 0 0 6px var(--low); }
+
+/* ── Animated pulse for critical alerts ────────────────────────────────────── */
+@keyframes pulse-critical {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }
-.row-low {
-  border-left: 2px solid #374151;
+.animate-pulse-critical { animation: pulse-critical 1.8s ease-in-out infinite; }
+
+/* ── Glow effects ──────────────────────────────────────────────────────────── */
+@keyframes glow-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
 }
+.animate-glow-in { animation: glow-in 0.25s ease-out both; }
+
+/* ── Skeleton loader ───────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Mono font for IPs / IDs ─────────────────────────────────────────────── */
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ── Transitions ──────────────────────────────────────────────────────────── */
+.transition-all { transition: all 0.18s ease; }

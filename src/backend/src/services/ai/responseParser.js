@@ -2,7 +2,7 @@
 
 const { AIProviderError } = require('./aiProvider');
 
-const REQUIRED_STRING_FIELDS = ['bluf', 'threat_assessment', 'possible_intent', 'reasoning', 'evidence_summary'];
+const REQUIRED_STRING_FIELDS = ['bluf', 'threat_assessment', 'possible_intent', 'reasoning', 'evidence_summary', 'categorization'];
 
 class AIResponseError extends AIProviderError {
   constructor(message) {
@@ -55,6 +55,15 @@ function parseResponse(response) {
     throw new AIResponseError('AI response field "confidence_score" must be an integer from 0 to 100');
   }
   result.confidence_score = parsed.confidence_score;
+
+  if (!['Critical', 'Medium', 'Low'].includes(result.categorization)) {
+    throw new AIResponseError('AI response field "categorization" must be Critical, Medium, or Low');
+  }
+
+  if (typeof parsed.is_false_positive !== 'boolean') {
+    throw new AIResponseError('AI response field "is_false_positive" must be a boolean');
+  }
+  result.is_false_positive = parsed.is_false_positive;
 
   return Object.freeze(result);
 }

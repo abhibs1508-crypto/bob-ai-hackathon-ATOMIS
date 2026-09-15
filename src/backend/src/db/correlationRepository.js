@@ -1,44 +1,12 @@
 'use strict';
 
 /**
- * CyberFusion — Correlation Database Repository
- *
- * All SQL for correlations and correlation_events lives here.
- * Uses parameterized queries exclusively.
- *
- * Phase 3 scope: create, update, fetch correlations + manage event membership.
+ * CyberFusion — Correlation Database Repository (Supabase)
  */
 
 const { getPool } = require('./pool');
+const { v4: uuidv4 } = require('uuid');
 
-// ---------------------------------------------------------------------------
-// WRITE — correlations
-// ---------------------------------------------------------------------------
-
-/**
- * Inserts a new correlation or updates an existing one (identified by
- * correlation_key) if the event cluster has grown or scores have changed.
- *
- * Uses a transaction to keep correlations + correlation_events consistent.
- *
- * @param {Object} params
- * @param {string} params.correlationKey
- * @param {string} params.title
- * @param {string} params.description
- * @param {number} params.eventCount
- * @param {Object} params.correlationFactors   — the full evidence JSON
- * @param {number} params.correlationScore
- * @param {string} params.correlationStrength
- * @param {string} params.status
- * @param {string|null} params.firstSeen
- * @param {string|null} params.lastSeen
- * @param {string[]|null} params.sourceIps
- * @param {string[]|null} params.targets
- * @param {string[]|null} params.sourceTypes
- * @param {string[]|null} params.attackStages
- * @param {string[]} params.threatEventIds   — `id` (UUID pk) values from threat_events
- * @returns {Promise<{ correlationId: string, isNew: boolean }>}
- */
 async function upsertCorrelation(params) {
   const {
     correlationKey, title, description, eventCount,
@@ -47,204 +15,83 @@ async function upsertCorrelation(params) {
     threatEventIds,
   } = params;
 
-  const conn = await getPool().getConnection();
-  await conn.beginTransaction();
+  let correlationId;
+  let isNew;
 
-  try {
-    // 1. Attempt to find existing correlation by its deterministic key
-    const [existing] = await conn.execute(
-      'SELECT id FROM correlations WHERE correlation_key = ? LIMIT 1',
-      [correlationKey]
-    );
+  // 1. Attempt to find existing correlation
+  const { data: existing } = await getPool().from('correlations').select('id').eq('correlation_key', correlationKey).limit(1);
+  
+  if (existing && existing.length > 0) {
+    correlationId = existing[0].id;
+    isNew = false;
 
-    let correlationId;
-    let isNew;
+    const { error } = await getPool().from('correlations').update({
+      title, description, event_count: eventCount,
+      correlation_factors: correlationFactors,
+      correlation_score: correlationScore, correlation_strength: correlationStrength, status,
+      first_seen: firstSeen, last_seen: lastSeen,
+      source_ips: sourceIps || [], targets: targets || [],
+      source_types: sourceTypes || [], attack_stages: attackStages || [],
+      updated_at: new Date().toISOString()
+    }).eq('id', correlationId);
+    if (error) throw error;
+  } else {
+    isNew = true;
+    correlationId = uuidv4();
 
-    if (existing.length > 0) {
-      // UPDATE existing
-      correlationId = existing[0].id;
-      isNew = false;
-
-      await conn.execute(
-        `UPDATE correlations
-         SET title                 = ?,
-             description           = ?,
-             event_count           = ?,
-             correlation_factors   = ?,
-             correlation_score     = ?,
-             correlation_strength  = ?,
-             status                = ?,
-             first_seen            = ?,
-             last_seen             = ?,
-             source_ips            = ?,
-             targets               = ?,
-             source_types          = ?,
-             attack_stages         = ?
-         WHERE id = ?`,
-        [
-          title, description, eventCount,
-          JSON.stringify(correlationFactors),
-          correlationScore, correlationStrength, status,
-          firstSeen, lastSeen,
-          JSON.stringify(sourceIps || []),
-          JSON.stringify(targets || []),
-          JSON.stringify(sourceTypes || []),
-          JSON.stringify(attackStages || []),
-          correlationId,
-        ]
-      );
-    } else {
-      // INSERT new
-      isNew = true;
-      const { v4: uuidv4 } = require('uuid');
-      correlationId = uuidv4();
-
-      await conn.execute(
-        `INSERT INTO correlations
-           (id, correlation_key, title, description, event_count,
-            correlation_factors, correlation_score, correlation_strength, status,
-            first_seen, last_seen, source_ips, targets, source_types, attack_stages)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          correlationId, correlationKey, title, description, eventCount,
-          JSON.stringify(correlationFactors),
-          correlationScore, correlationStrength, status,
-          firstSeen, lastSeen,
-          JSON.stringify(sourceIps || []),
-          JSON.stringify(targets || []),
-          JSON.stringify(sourceTypes || []),
-          JSON.stringify(attackStages || []),
-        ]
-      );
-    }
-
-    // 2. Upsert correlation_events (ignore duplicates)
-    for (const evtId of threatEventIds) {
-      await conn.execute(
-        `INSERT IGNORE INTO correlation_events (correlation_id, event_id)
-         VALUES (?, ?)`,
-        [correlationId, evtId]
-      );
-    }
-
-    await conn.commit();
-    return { correlationId, isNew };
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    conn.release();
+    const { error } = await getPool().from('correlations').insert({
+      id: correlationId, correlation_key: correlationKey, title, description,
+      event_count: eventCount, correlation_factors: correlationFactors,
+      correlation_score: correlationScore, correlation_strength: correlationStrength, status,
+      first_seen: firstSeen, last_seen: lastSeen,
+      source_ips: sourceIps || [], targets: targets || [],
+      source_types: sourceTypes || [], attack_stages: attackStages || []
+    });
+    if (error) throw error;
   }
+
+  // 2. Upsert correlation_events
+  const correlationEvents = threatEventIds.map(evtId => ({ correlation_id: correlationId, event_id: evtId }));
+  if (correlationEvents.length > 0) {
+    await getPool().from('correlation_events').upsert(correlationEvents, { onConflict: 'correlation_id,event_id' });
+  }
+
+  return { correlationId, isNew };
 }
 
-// ---------------------------------------------------------------------------
-// READ — correlations
-// ---------------------------------------------------------------------------
-
-/**
- * Returns all correlations, newest first, with optional limit.
- * @param {{ limit?: number, status?: string }} opts
- * @returns {Promise<Object[]>}
- */
 async function listCorrelations({ limit = 50, status } = {}) {
-  const params = [];
-  let where = '';
-
-  if (status) {
-    where = 'WHERE status = ?';
-    params.push(status);
-  }
-
-  params.push(Math.min(limit, 200));  // cap at 200
-
-  const [rows] = await getPool().execute(
-    `SELECT id, correlation_key, title, description, event_count,
-            correlation_factors, correlation_score, correlation_strength,
-            status, first_seen, last_seen, source_ips, targets, source_types,
-            attack_stages, created_at, updated_at
-     FROM correlations
-     ${where}
-     ORDER BY updated_at DESC
-     LIMIT ?`,
-    params
-  );
-  return rows.map(deserialise);
+  let query = getPool().from('correlations').select('*').order('updated_at', { ascending: false }).limit(Math.min(limit, 200));
+  if (status) query = query.eq('status', status);
+  
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
 }
 
-/**
- * Returns a single correlation by its UUID.
- * @param {string} id
- * @returns {Promise<Object|null>}
- */
 async function getCorrelationById(id) {
-  const [rows] = await getPool().execute(
-    `SELECT id, correlation_key, title, description, event_count,
-            correlation_factors, correlation_score, correlation_strength,
-            status, first_seen, last_seen, source_ips, targets, source_types,
-            attack_stages, created_at, updated_at
-     FROM correlations
-     WHERE id = ?`,
-    [id]
-  );
-  if (!rows.length) return null;
-  return deserialise(rows[0]);
+  const { data, error } = await getPool().from('correlations').select('*').eq('id', id).single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
-/**
- * Returns the threat_events linked to a correlation.
- * @param {string} correlationId
- * @returns {Promise<Object[]>}
- */
 async function getEventsByCorrelationId(correlationId) {
-  const [rows] = await getPool().execute(
-    `SELECT te.id, te.event_id, te.source, te.timestamp, te.event_type,
-            te.source_ip, te.target, te.indicator_type, te.indicator_value,
-            te.severity, te.confidence, te.location, te.raw_data, te.ingested_at
-     FROM threat_events te
-     JOIN correlation_events ce ON ce.event_id = te.id
-     WHERE ce.correlation_id = ?
-     ORDER BY te.timestamp ASC`,
-    [correlationId]
-  );
-  return rows;
+  const { data, error } = await getPool().from('threat_events')
+    .select('*, correlation_events!inner(correlation_id)')
+    .eq('correlation_events.correlation_id', correlationId)
+    .order('timestamp', { ascending: true });
+  if (error) throw error;
+  return data || [];
 }
 
-/**
- * Returns a correlation by its deterministic key (used for duplicate check).
- * @param {string} correlationKey
- * @returns {Promise<Object|null>}
- */
 async function getCorrelationByKey(correlationKey) {
-  const [rows] = await getPool().execute(
-    'SELECT id, correlation_key, correlation_score, status FROM correlations WHERE correlation_key = ? LIMIT 1',
-    [correlationKey]
-  );
-  return rows.length ? rows[0] : null;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Parses JSON fields that MySQL2 may return as strings (depends on driver config).
- * @param {Object} row
- * @returns {Object}
- */
-function deserialise(row) {
-  const jsonCols = ['correlation_factors', 'source_ips', 'targets', 'source_types', 'attack_stages'];
-  for (const col of jsonCols) {
-    if (row[col] && typeof row[col] === 'string') {
-      try { row[col] = JSON.parse(row[col]); } catch { /* leave as-is */ }
-    }
-  }
-  return row;
+  const { data, error } = await getPool().from('correlations')
+    .select('id, correlation_key, correlation_score, status')
+    .eq('correlation_key', correlationKey).limit(1);
+  if (error) throw error;
+  return data.length ? data[0] : null;
 }
 
 module.exports = {
-  upsertCorrelation,
-  listCorrelations,
-  getCorrelationById,
-  getEventsByCorrelationId,
-  getCorrelationByKey,
+  upsertCorrelation, listCorrelations, getCorrelationById,
+  getEventsByCorrelationId, getCorrelationByKey,
 };

@@ -43,12 +43,10 @@ router.get('/', async (_req, res) => {
   let dbStatus = 'unavailable';
 
   try {
-    const conn = await getPool().getConnection();
-    try {
-      await conn.query('SELECT 1');
+    const client = getPool();
+    const { error } = await client.from('correlations').select('id').limit(1);
+    if (!error) {
       dbStatus = 'connected';
-    } finally {
-      conn.release();
     }
   } catch {
     // Swallow — status already set to 'unavailable'

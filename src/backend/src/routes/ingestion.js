@@ -32,6 +32,21 @@ const { ingestEvent } = require('../services/ingestion/ingestionService');
 const router = Router();
 
 // ---------------------------------------------------------------------------
+// POST /api/ingestion  — generic route (auto-routes by source field)
+// ---------------------------------------------------------------------------
+router.post(
+  '/',
+  async (req, res, next) => {
+    try {
+      const result = await ingestEvent(req.body);
+      res.status(201).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
 // POST /api/ingestion/siem
 // ---------------------------------------------------------------------------
 router.post(

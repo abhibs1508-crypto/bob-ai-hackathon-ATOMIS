@@ -1,91 +1,58 @@
 'use strict';
 
-const { v4: uuidv4 } = require('uuid');
-const { getPool } = require('./pool');
+/**
+ * CyberFusion — Intelligence Database Repository (Supabase)
+ */
 
-function deserialise(row) {
-  if (!row) return null;
-  const result = { ...row };
-  if (typeof result.recommended_actions === 'string') {
-    try { result.recommended_actions = JSON.parse(result.recommended_actions); } catch { result.recommended_actions = []; }
-  }
-  if (!Array.isArray(result.recommended_actions)) result.recommended_actions = [];
-  return result;
-}
+const { getPool } = require('./pool');
+const { v4: uuidv4 } = require('uuid');
 
 async function findByCorrelationId(correlationId) {
-  const [rows] = await getPool().execute(
-    `SELECT id, correlation_id, bluf, threat_assessment, possible_intent, reasoning,
-            evidence_summary, recommended_actions, ai_provider, ai_model,
-            confidence_score, generated_at
-     FROM intelligence_reports WHERE correlation_id = ? LIMIT 1`,
-    [correlationId]
-  );
-  return rows.length ? deserialise(rows[0]) : null;
+  const { data, error } = await getPool().from('intelligence_reports')
+    .select('*')
+    .eq('correlation_id', correlationId)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
-/** Returns the number of persisted reports for a correlation for local verification. */
 async function countByCorrelationId(correlationId) {
-  const [rows] = await getPool().execute(
-    'SELECT COUNT(*) AS count FROM intelligence_reports WHERE correlation_id = ?',
-    [correlationId]
-  );
-  return Number(rows[0].count);
-}
-
-async function create(report) {
-  const id = uuidv4();
-  await getPool().execute(
-    `INSERT INTO intelligence_reports
-       (id, correlation_id, bluf, threat_assessment, possible_intent, reasoning,
-        evidence_summary, recommended_actions, ai_provider, ai_model, confidence_score)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      id, report.correlationId, report.bluf, report.threatAssessment,
-      report.possibleIntent, report.reasoning, report.evidenceSummary,
-      JSON.stringify(report.recommendedActions), report.aiProvider, report.aiModel || null,
-      report.confidenceScore,
-    ]
-  );
-  return findByCorrelationId(report.correlationId);
-}
-
-async function update(report) {
-  await getPool().execute(
-    `UPDATE intelligence_reports SET bluf = ?, threat_assessment = ?, possible_intent = ?,
-       reasoning = ?, evidence_summary = ?, recommended_actions = ?, ai_provider = ?,
-       ai_model = ?, confidence_score = ?, generated_at = CURRENT_TIMESTAMP(3)
-     WHERE correlation_id = ?`,
-    [
-      report.bluf, report.threatAssessment, report.possibleIntent, report.reasoning,
-      report.evidenceSummary, JSON.stringify(report.recommendedActions), report.aiProvider,
-      report.aiModel || null, report.confidenceScore, report.correlationId,
-    ]
-  );
-  return findByCorrelationId(report.correlationId);
+  const { count, error } = await getPool().from('intelligence_reports')
+    .select('*', { count: 'exact', head: true })
+    .eq('correlation_id', correlationId);
+  if (error) throw error;
+  return count || 0;
 }
 
 async function upsert(report) {
-  const id = uuidv4();
-  await getPool().execute(
-    `INSERT INTO intelligence_reports
-       (id, correlation_id, bluf, threat_assessment, possible_intent, reasoning,
-        evidence_summary, recommended_actions, ai_provider, ai_model, confidence_score)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE bluf = VALUES(bluf),
-       threat_assessment = VALUES(threat_assessment), possible_intent = VALUES(possible_intent),
-       reasoning = VALUES(reasoning), evidence_summary = VALUES(evidence_summary),
-       recommended_actions = VALUES(recommended_actions), ai_provider = VALUES(ai_provider),
-       ai_model = VALUES(ai_model), confidence_score = VALUES(confidence_score),
-       generated_at = CURRENT_TIMESTAMP(3)`,
-    [
-      id, report.correlationId, report.bluf, report.threatAssessment,
-      report.possibleIntent, report.reasoning, report.evidenceSummary,
-      JSON.stringify(report.recommendedActions), report.aiProvider, report.aiModel || null,
-      report.confidenceScore,
-    ]
-  );
+  const payload = {
+    correlation_id: report.correlationId,
+    bluf: report.bluf,
+    threat_assessment: report.threatAssessment,
+    possible_intent: report.possibleIntent,
+    reasoning: report.reasoning,
+    evidence_summary: report.evidenceSummary,
+    recommended_actions: report.recommendedActions,
+    ai_provider: report.aiProvider,
+    ai_model: report.aiModel || null,
+    confidence_score: report.confidenceScore,
+    categorization: report.categorization,
+    is_false_positive: report.isFalsePositive || false,
+    generated_at: new Date().toISOString()
+  };
+
+  const { data: existing } = await getPool().from('intelligence_reports').select('id').eq('correlation_id', report.correlationId).single();
+  
+  if (existing) {
+    const { error } = await getPool().from('intelligence_reports').update(payload).eq('id', existing.id);
+    if (error) throw error;
+  } else {
+    payload.id = uuidv4();
+    const { error } = await getPool().from('intelligence_reports').insert(payload);
+    if (error) throw error;
+  }
+
   return findByCorrelationId(report.correlationId);
 }
 
-module.exports = { findByCorrelationId, countByCorrelationId, create, update, upsert };
+module.exports = { findByCorrelationId, countByCorrelationId, create: upsert, update: upsert, upsert };
