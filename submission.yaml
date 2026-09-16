@@ -54,7 +54,7 @@ submission:
       - "Express.js"
       - "Tailwind CSS"
     ibm_technologies:
-      - "IBM BoB AI Innovation Hackathon"
+      - "IBM BoB AI"
     databases:
       - "Supabase PostgreSQL"
     other:
@@ -96,8 +96,8 @@ artifacts:
   source_code: "src/"
   setup_guide: "docs/setup-guide.md"
   architecture_doc: "docs/architecture.md"
-  demo_video: "demo/https://www.youtube.com/"
   live_demo: "https://rainbow-faun-0fed3e.netlify.app"
+  demo_video: ""
   screenshots: "demo/screenshots/Screenshot 2026-09-15 225301.png"
   presentation: "presentation/FROM-NOISE-TO-SIGNAL.pdf"
 
